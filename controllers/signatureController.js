@@ -14,13 +14,15 @@ const getPendingSignatures = async (req, res) => {
         fa.id as assignment_id,
         fa.status,
         fa.submitted_at,
+        fa.due_date,
         ft.id as form_template_id,
         ft.name as form_name,
         ft.type as form_type,
-        ft.version as form_version
+        ft.version as form_version,
+        ft.description as form_description
       FROM form_assignments fa
       JOIN form_templates ft ON fa.form_template_id = ft.id
-      WHERE fa.status = 'signature_pending'
+      WHERE fa.status IN ('signature_pending', 'submitted')
     `;
 
     const params = [];
@@ -89,11 +91,15 @@ const submitSignature = async (req, res) => {
       });
     }
 
-    // Check if signature is pending
-    if (assignment.status !== 'signature_pending') {
+    // Check if signature is pending or form is submitted (both need signature)
+    // Allow both 'signature_pending' and 'submitted' status as they both require signature
+    const allowedStatuses = ['signature_pending', 'submitted'];
+    if (!allowedStatuses.includes(assignment.status)) {
+      console.log('Assignment status:', assignment.status, 'for assignment ID:', assignmentId);
       return res.status(400).json({
         success: false,
-        message: 'Form is not pending signature'
+        message: `Form is not pending signature. Current status: ${assignment.status}. Allowed statuses: ${allowedStatuses.join(', ')}`,
+        currentStatus: assignment.status
       });
     }
 

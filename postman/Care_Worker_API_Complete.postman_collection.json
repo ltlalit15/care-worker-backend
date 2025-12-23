@@ -56,6 +56,11 @@
 			"key": "signatureId",
 			"value": "1",
 			"type": "string"
+		},
+		{
+			"key": "payrollId",
+			"value": "1",
+			"type": "string"
 		}
 	],
 	"item": [
@@ -900,6 +905,169 @@
 							"path": ["import-export", "import-care-workers"]
 						},
 						"description": "Import care workers from CSV file\n\n**CSV Format Required:**\n- Columns: email, password, name, phone, address, emergencyContactName, emergencyContactPhone, status\n- Required: email, password, name\n- Optional: phone, address, emergencyContactName, emergencyContactPhone, status\n\n**File Size Limit:** 5MB\n\n**Auth Required:** Admin only"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "💰 Payroll Management (Admin Only)",
+			"item": [
+				{
+					"name": "Get All Payroll Records",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payroll?search=&region=&status=",
+							"host": ["{{baseUrl}}"],
+							"path": ["payroll"],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by name, email, or care worker name",
+									"disabled": true
+								},
+								{
+									"key": "region",
+									"value": "",
+									"description": "Filter by region (e.g., Acton 1, Acton 2, Ealing 1)",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by status: Paid, Unpaid",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all payroll records with optional filters\n\n**Query Parameters:**\n- `search` - Search by name, email, or care worker name\n- `region` - Filter by region\n- `status` - Filter by status (Paid, Unpaid)\n\n**Response:** Array of payroll records with care worker details\n\n**Auth Required:** Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payroll Record by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payroll/{{payrollId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["payroll", "{{payrollId}}"]
+						},
+						"description": "Get a specific payroll record by ID\n\n**Path Parameters:**\n- `id` - Payroll Record ID\n\n**Response:** Payroll record with care worker details\n\n**Auth Required:** Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Payroll Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"careWorkerId\": 2,\n    \"region\": \"Acton 1\",\n    \"name\": \"John Doe\",\n    \"clientNo\": \"CL001\",\n    \"date\": \"Oct\",\n    \"totalHours\": 40,\n    \"ratePerHour\": 15.50,\n    \"totalAmount\": 620.00,\n    \"paid\": 500.00,\n    \"status\": \"Unpaid\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payroll",
+							"host": ["{{baseUrl}}"],
+							"path": ["payroll"]
+						},
+						"description": "Create a new payroll record\n\n**Required Fields:**\n- `careWorkerId` - Care Worker ID\n- `name` - Care worker name\n\n**Optional Fields:**\n- `region` - Region name\n- `clientNo` - Client number\n- `date` - Date/period (e.g., \"Oct\")\n- `totalHours` - Total hours worked\n- `ratePerHour` - Rate per hour\n- `totalAmount` - Total amount (calculated if not provided: totalHours * ratePerHour)\n- `paid` - Amount paid\n- `status` - Status (Paid, Unpaid) - Default: Unpaid\n\n**Note:** Balance is automatically calculated as (totalAmount - paid)\n\n**Auth Required:** Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payroll Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"region\": \"Acton 2\",\n    \"name\": \"John Doe Updated\",\n    \"clientNo\": \"CL002\",\n    \"date\": \"Nov\",\n    \"totalHours\": 45,\n    \"ratePerHour\": 16.00,\n    \"totalAmount\": 720.00,\n    \"paid\": 720.00,\n    \"status\": \"Paid\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payroll/{{payrollId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["payroll", "{{payrollId}}"]
+						},
+						"description": "Update a payroll record\n\n**Path Parameters:**\n- `id` - Payroll Record ID\n\n**Body:** All fields are optional. Only provided fields will be updated.\n\n**Note:** Balance is automatically recalculated based on totalAmount and paid values.\n\n**Auth Required:** Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Payroll Record",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{adminToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payroll/{{payrollId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["payroll", "{{payrollId}}"]
+						},
+						"description": "Delete a payroll record\n\n**Path Parameters:**\n- `id` - Payroll Record ID\n\n**Note:** This is a hard delete - the record will be permanently removed from the database.\n\n**Auth Required:** Admin only"
 					},
 					"response": []
 				}

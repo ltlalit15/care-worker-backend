@@ -201,15 +201,13 @@ const getFormById = async (req, res) => {
       }
     }
 
-    // Validate form_data exists
-    if (!parsedFormData || (typeof parsedFormData === 'object' && Object.keys(parsedFormData).length === 0)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Form template has no data to display'
-      });
-    }
+    // If form_data is empty, return empty object instead of error
+    // This allows forms to be opened even if they don't have form_data yet
+    const finalFormData = parsedFormData && (typeof parsedFormData === 'object' && Object.keys(parsedFormData).length > 0) 
+      ? parsedFormData 
+      : {}; // Return empty object if no form_data
 
-    // Return all fields including form_data
+    // Return all fields including form_data (empty object if not available)
     res.status(200).json({
       success: true,
       data: {
@@ -223,7 +221,7 @@ const getFormById = async (req, res) => {
         created_by: form.created_by,
         created_at: form.created_at,
         updated_at: form.updated_at,
-        form_data: parsedFormData
+        form_data: finalFormData
       }
     });
   } catch (error) {

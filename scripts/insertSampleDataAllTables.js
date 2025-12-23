@@ -120,19 +120,43 @@ async function insertSampleDataAllTables() {
           name: 'Employment Application',
           description: 'Standard employment application form for new care workers',
           type: 'Input',
-          version: '1.0'
+          version: '1.0',
+          formData: {
+            firstName: { type: 'text', label: 'First Name', required: true, value: '' },
+            lastName: { type: 'text', label: 'Last Name', required: true, value: '' },
+            email: { type: 'email', label: 'Email Address', required: true, value: '' },
+            phone: { type: 'tel', label: 'Phone Number', required: true, value: '' },
+            address: { type: 'textarea', label: 'Address', required: true, value: '' },
+            dateOfBirth: { type: 'date', label: 'Date of Birth', required: true, value: '' },
+            emergencyContact: { type: 'text', label: 'Emergency Contact Name', required: true, value: '' },
+            emergencyPhone: { type: 'tel', label: 'Emergency Contact Phone', required: true, value: '' }
+          }
         },
         {
           name: 'Health & Safety Handbook',
           description: 'Health and safety handbook acknowledgment form',
           type: 'Document',
-          version: '2.0'
+          version: '2.0',
+          formData: {
+            acknowledged: { type: 'checkbox', label: 'I acknowledge that I have read and understood the Health & Safety Handbook', required: true, value: false },
+            dateAcknowledged: { type: 'date', label: 'Date Acknowledged', required: true, value: '' },
+            signature: { type: 'signature', label: 'Signature', required: true, value: '' }
+          }
         },
         {
           name: 'Interview Scoring',
           description: 'Interview scoring form for care worker candidates',
           type: 'Input',
-          version: '1.0'
+          version: '1.0',
+          formData: {
+            candidateName: { type: 'text', label: 'Candidate Name', required: true, value: '' },
+            interviewDate: { type: 'date', label: 'Interview Date', required: true, value: '' },
+            communicationSkills: { type: 'number', label: 'Communication Skills (1-10)', required: true, value: 0, min: 1, max: 10 },
+            technicalSkills: { type: 'number', label: 'Technical Skills (1-10)', required: true, value: 0, min: 1, max: 10 },
+            attitude: { type: 'number', label: 'Attitude (1-10)', required: true, value: 0, min: 1, max: 10 },
+            overallScore: { type: 'number', label: 'Overall Score', required: true, value: 0 },
+            comments: { type: 'textarea', label: 'Comments', required: false, value: '' }
+          }
         }
       ];
 
@@ -144,16 +168,34 @@ async function insertSampleDataAllTables() {
         );
 
         if (formExisting.length > 0) {
+          // Update existing template with form_data if it's empty
+          const [existingForm] = await connection.execute(
+            'SELECT form_data FROM form_templates WHERE id = ?',
+            [formExisting[0].id]
+          );
+          
+          const existingFormData = existingForm[0]?.form_data;
+          const isEmpty = !existingFormData || existingFormData === '{}' || existingFormData === 'null';
+          
+          if (isEmpty && form.formData) {
+            await connection.execute(
+              'UPDATE form_templates SET form_data = ? WHERE id = ?',
+              [JSON.stringify(form.formData), formExisting[0].id]
+            );
+            console.log(`   ✅ Form template "${form.name}" updated with form_data (ID: ${formExisting[0].id})`);
+          } else {
+            console.log(`   ✅ Form template "${form.name}" already exists (ID: ${formExisting[0].id})`);
+          }
+          
           formTemplateIds.push(formExisting[0].id);
-          console.log(`   ✅ Form template "${form.name}" already exists (ID: ${formExisting[0].id})`);
         } else {
           const [formResult] = await connection.execute(
             `INSERT INTO form_templates (name, description, type, version, form_data, is_active, created_by)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [form.name, form.description, form.type, form.version, JSON.stringify({}), true, adminId]
+            [form.name, form.description, form.type, form.version, JSON.stringify(form.formData || {}), true, adminId]
           );
           formTemplateIds.push(formResult.insertId);
-          console.log(`   ✅ Form template "${form.name}" created (ID: ${formResult.insertId})`);
+          console.log(`   ✅ Form template "${form.name}" created with form_data (ID: ${formResult.insertId})`);
         }
       }
 

@@ -123,6 +123,54 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 -- ============================================
+-- PAYROLL TABLE
+-- ============================================
+-- Payroll records for care workers
+CREATE TABLE IF NOT EXISTS payroll (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  care_worker_id INT NOT NULL,
+  region VARCHAR(255),
+  name VARCHAR(255) NOT NULL,
+  client_no VARCHAR(50),
+  date VARCHAR(50),
+  total_hours DECIMAL(10, 2) DEFAULT 0,
+  rate_per_hour DECIMAL(10, 2) DEFAULT 0,
+  total_amount DECIMAL(10, 2) DEFAULT 0,
+  paid DECIMAL(10, 2) DEFAULT 0,
+  status ENUM('Paid', 'Unpaid') DEFAULT 'Unpaid',
+  balance DECIMAL(10, 2) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (care_worker_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_care_worker_id (care_worker_id),
+  INDEX idx_status (status),
+  INDEX idx_region (region)
+);
+
+-- ============================================
+-- DOCUMENTS TABLE
+-- ============================================
+-- Documents for care workers (contracts, policies, etc.)
+CREATE TABLE IF NOT EXISTS documents (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  care_worker_id INT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  file_url VARCHAR(500),
+  file_type VARCHAR(50),
+  file_size INT,
+  status ENUM('Pending', 'Signed', 'Completed') DEFAULT 'Pending',
+  signed_at TIMESTAMP NULL,
+  uploaded_by INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (care_worker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (uploaded_by) REFERENCES users(id),
+  INDEX idx_care_worker_id (care_worker_id),
+  INDEX idx_status (status)
+);
+
+-- ============================================
 -- NOTES
 -- ============================================
 -- Default admin user will be created by running: node scripts/setupAdmin.js

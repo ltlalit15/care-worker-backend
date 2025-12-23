@@ -81,9 +81,15 @@ const requireCareWorker = (req, res, next) => {
   next();
 };
 
+// Alias for backward compatibility
+const authenticateToken = authenticate;
+const adminOnly = requireAdmin;
+
 module.exports = {
   authenticate,
+  authenticateToken,
   requireAdmin,
+  adminOnly,
   requireCareWorker
 };
 

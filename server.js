@@ -18,6 +18,8 @@ const formAssignmentRoutes = require('./routes/formAssignmentRoutes');
 const signatureRoutes = require('./routes/signatureRoutes');
 const importExportRoutes = require('./routes/importExportRoutes');
 const careWorkerDashboardRoutes = require('./routes/careWorkerDashboardRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
+const documentsRoutes = require('./routes/documentsRoutes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -28,6 +30,8 @@ app.use('/api/form-assignments', formAssignmentRoutes);
 app.use('/api/signatures', signatureRoutes);
 app.use('/api/import-export', importExportRoutes);
 app.use('/api/care-worker', careWorkerDashboardRoutes);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/documents', documentsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -1,20 +1,25 @@
 const pool = require('../config/db');
 
 /**
- * Get pending signatures for care worker
+ * Get all signatures (pending and completed) for care worker
  * GET /api/signatures/pending
+ * GET /api/signatures/me (new endpoint for all signatures)
  */
 const getPendingSignatures = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    // Get all forms that need signature or have signature
+    // Include forms with status: signature_pending, submitted, or completed (with signature_data)
     let query = `
       SELECT 
         fa.id as assignment_id,
         fa.status,
         fa.submitted_at,
+        fa.completed_at,
         fa.due_date,
+        fa.signature_data,
         ft.id as form_template_id,
         ft.name as form_name,
         ft.type as form_type,
@@ -22,7 +27,11 @@ const getPendingSignatures = async (req, res) => {
         ft.description as form_description
       FROM form_assignments fa
       JOIN form_templates ft ON fa.form_template_id = ft.id
-      WHERE fa.status IN ('signature_pending', 'submitted')
+      WHERE (
+        fa.status = 'signature_pending' 
+        OR fa.status = 'submitted'
+        OR (fa.status = 'completed' AND fa.signature_data IS NOT NULL)
+      )
     `;
 
     const params = [];
@@ -33,13 +42,39 @@ const getPendingSignatures = async (req, res) => {
       params.push(userId);
     }
 
-    query += ` ORDER BY fa.submitted_at DESC`;
+    query += ` ORDER BY fa.submitted_at DESC, fa.completed_at DESC`;
 
     const [signatures] = await pool.execute(query, params);
 
+    // Format response with signature status
+    const formattedSignatures = signatures.map(sig => {
+      // Determine signature status based on signature_data
+      let signatureStatus = 'Pending';
+      if (sig.signature_data && sig.signature_data.trim() !== '') {
+        signatureStatus = 'Completed';
+      } else if (sig.status === 'completed') {
+        signatureStatus = 'Completed';
+      } else {
+        signatureStatus = 'Pending';
+      }
+
+      return {
+        id: sig.assignment_id,
+        assignment_id: sig.assignment_id,
+        form_name: sig.form_name,
+        form_type: sig.form_type,
+        form_description: sig.form_description || '',
+        status: signatureStatus, // 'Pending' or 'Completed'
+        due_date: sig.due_date,
+        submitted_at: sig.submitted_at,
+        completed_at: sig.completed_at,
+        has_signature: sig.signature_data ? true : false
+      };
+    });
+
     res.json({
       success: true,
-      data: signatures
+      data: formattedSignatures
     });
   } catch (error) {
     console.error('Get pending signatures error:', error);
@@ -93,7 +128,7 @@ const submitSignature = async (req, res) => {
 
     // Check if signature is pending or form is submitted (both need signature)
     // Allow both 'signature_pending' and 'submitted' status as they both require signature
-    const allowedStatuses = ['signature_pending', 'submitted'];
+        const allowedStatuses = ['signature_pending', 'submitted'];
     if (!allowedStatuses.includes(assignment.status)) {
       console.log('Assignment status:', assignment.status, 'for assignment ID:', assignmentId);
       return res.status(400).json({
@@ -114,12 +149,15 @@ const submitSignature = async (req, res) => {
         [assignmentId, signatureData, signatureType || 'draw']
       );
 
-      // Update assignment status to completed
+      // Update assignment status to completed and save signature_data
       await connection.execute(
         `UPDATE form_assignments 
-         SET status = 'completed', completed_at = NOW(), progress = 100
+         SET status = 'completed', 
+             completed_at = NOW(), 
+             progress = 100,
+             signature_data = ?
          WHERE id = ?`,
-        [assignmentId]
+        [signatureData, assignmentId]
       );
 
       await connection.commit();

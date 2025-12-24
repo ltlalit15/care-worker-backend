@@ -122,6 +122,7 @@ const getCareWorkerAssignments = async (req, res) => {
         fa.completed_at,
         fa.due_date,
         fa.form_data,
+        fa.signature_data,
         ft.id as form_template_id,
         ft.name as form_name,
         ft.type as form_type,
@@ -135,23 +136,37 @@ const getCareWorkerAssignments = async (req, res) => {
     );
 
     // Format response with nested formTemplate object
-    const formattedAssignments = assignments.map(a => ({
-      id: a.id,
-      status: a.status,
-      progress: a.progress,
-      assigned_at: a.assigned_at,
-      submitted_at: a.submitted_at,
-      completed_at: a.completed_at,
-      due_date: a.due_date,
-      form_data: a.form_data ? (typeof a.form_data === 'string' ? JSON.parse(a.form_data) : a.form_data) : null,
-      formTemplate: {
-        id: a.form_template_id,
-        name: a.form_name,
-        type: a.form_type,
-        version: a.form_version,
-        description: a.form_description
+    const formattedAssignments = assignments.map(a => {
+      // Determine signature status based on signature_data
+      let signatureStatus = null;
+      if (a.signature_data && a.signature_data.trim() !== '') {
+        signatureStatus = 'Completed';
+      } else if (a.status === 'signature_pending' || a.status === 'submitted') {
+        signatureStatus = 'Pending';
+      } else if (a.status === 'completed' && !a.signature_data) {
+        signatureStatus = null; // No signature required
       }
-    }));
+
+      return {
+        id: a.id,
+        status: a.status,
+        progress: a.progress,
+        assigned_at: a.assigned_at,
+        submitted_at: a.submitted_at,
+        completed_at: a.completed_at,
+        due_date: a.due_date,
+        form_data: a.form_data ? (typeof a.form_data === 'string' ? JSON.parse(a.form_data) : a.form_data) : null,
+        signature_status: signatureStatus, // 'Completed', 'Pending', or null
+        has_signature: a.signature_data ? true : false,
+        formTemplate: {
+          id: a.form_template_id,
+          name: a.form_name,
+          type: a.form_type,
+          version: a.form_version,
+          description: a.form_description
+        }
+      };
+    });
 
     res.json({
       success: true,

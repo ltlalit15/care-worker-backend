@@ -134,14 +134,20 @@ const getMe = async (req, res) => {
       userName = profiles[0].name;
     }
 
+    // Return data in a flat structure for easier frontend access
     res.json({
       success: true,
       data: {
-        user: {
-          ...user,
-          name: userName || null,
-          ...(profileData && { profile: profileData })
-        }
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        name: userName || null,
+        phone: profileData?.phone || null,
+        address: profileData?.address || null,
+        emergency_contact_name: profileData?.emergency_contact_name || null,
+        emergency_contact_phone: profileData?.emergency_contact_phone || null,
+        profile: profileData || null
       }
     });
   } catch (error) {

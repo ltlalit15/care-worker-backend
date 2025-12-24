@@ -47,7 +47,7 @@ SELECT * FROM (
     SELECT 'Care Plan', 
            'Comprehensive care planning document to address client needs, preferences, and support requirements.', 
            'Input', 
-           'client', 
+           'client',
            '2.0', 
            '{}', 
            TRUE, 
